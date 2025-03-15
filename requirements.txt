@@ -62,4 +62,5 @@ visualkeras==0.1.4
 Werkzeug==3.1.0
 wheel==0.44.0
 wrapt==1.16.0
-
+gunicorn==23.0.0
+packaging==24.2
