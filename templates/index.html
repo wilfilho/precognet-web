@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PerceptAI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #globalLoadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #errorPopup {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background-color: #f56565;
+      color: white;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      opacity: 1;
+      transform: translateX(0);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      z-index: 200;
+    }
+  </style>
+</head>
+<body class="bg-black text-white font-sans min-h-screen p-4">
+  {% if error %}
+    <div id="errorPopup">
+      <span>{{ error }}</span>
+      <button id="closeErrorPopup" class="font-bold">×</button>
+    </div>
+  {% endif %}
+  <h1 class="text-center text-4xl mb-8" style="font-family: 'Roboto', sans-serif; font-weight:700;">PerceptAI</h1>
+  <div id="globalLoadingOverlay">
+    <span class="text-white text-2xl">Carregando predições...</span>
+  </div>
+  <div class="container mx-auto">
+    <div class="flex flex-col md:flex-row md:space-x-4">
+      <div class="flex-1 relative">
+        <div id="loadingOverlay" class="absolute inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80" style="display:none">
+          <span class="text-white text-2xl">Carregando predições...</span>
+        </div>
+        <div id="videoContainer" class="relative bg-gray-800 aspect-video overflow-hidden">
+          <div id="noVideoOverlay" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 text-sm bg-black bg-opacity-60 {% if video_url %}hidden{% endif %}">
+            <span>Nenhum vídeo carregado</span>
+            <span class="text-xs mt-1">(faça upload abaixo)</span>
+          </div>
+          <video id="videoPreview" autoplay muted playsinline class="w-full h-full object-cover {% if not video_url %}hidden{% endif %}">
+            <source id="videoSource" src="{{ video_url or '' }}" type="video/mp4">
+            Seu navegador não suporta o elemento <code>video</code>.
+          </video>
+          <div id="videoStatusWrapper" class="absolute bottom-0 left-0 right-0 p-2 bg-black bg-opacity-70 text-center {% if not video_url %}hidden{% endif %}">
+            <span id="videoStatus" class="text-lg font-bold">Sem Violência</span>
+          </div>
+          <div id="playOverlay" class="absolute inset-0 hidden bg-black bg-opacity-30 flex items-center justify-center cursor-pointer">
+            <div class="text-white text-6xl">▶</div>
+          </div>
+        </div>
+        <div class="relative w-full h-8 mt-2">
+          <div id="lineContainer" class="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[4px] bg-gray-200 overflow-hidden"></div>
+          <div id="playhead" class="absolute w-4 h-4 bg-white rounded-full left-0 top-1/2 -translate-y-1/2"></div>
+        </div>
+        <form action="/" method="post" enctype="multipart/form-data" class="mt-4">
+          <div class="w-full">
+            <label for="videoFile" class="block w-full text-center px-6 py-2 border-2 border-white bg-transparent text-white font-bold cursor-pointer hover:bg-white hover:text-black transition-colors">
+              Subir Vídeo
+            </label>
+            <input type="file" id="videoFile" name="video" accept="video/mp4" class="hidden" onchange="this.form.submit()">
+          </div>
+        </form>
+      </div>
+      <div class="relative w-full md:w-1/3 mt-4 md:mt-0">
+        <div id="suggestionContent">
+          <div class="space-y-4">
+            <div>
+              <h2 class="text-xl mb-2">Vídeos de Violência</h2>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="cursor-pointer" onclick="loadSuggestion('violence01.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='violence01.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('violence02.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='violence02.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('violence03.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='violence03.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('violence04.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='violence04.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('violence05.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='violence05.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('violence06.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='violence06.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h2 class="text-xl mb-2">Vídeos Sem Violência</h2>
+              <div class="grid grid-cols-3 gap-2">
+                <div class="cursor-pointer" onclick="loadSuggestion('nonviolence01.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='nonviolence01.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('nonviolence02.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='nonviolence02.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('nonviolence03.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='nonviolence03.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('nonviolence04.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='nonviolence04.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('nonviolence05.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='nonviolence05.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+                <div class="cursor-pointer" onclick="loadSuggestion('nonviolence06.mp4')">
+                  <video src="{{ url_for('suggested_file', filename='nonviolence06.mp4') }}" muted class="object-cover w-full h-24" preload="metadata"></video>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <form id="suggestionForm" method="post" action="/" style="display:none;">
+    <input type="hidden" name="suggestion" id="suggestionInput">
+  </form>
+  <script>
+    const violenceMapFromModel = {{ violence_list|tojson }};
+  </script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const fileInput = document.getElementById('videoFile');
+      const videoSource = document.getElementById('videoSource');
+      const videoPreview = document.getElementById('videoPreview');
+      const noVideoOverlay = document.getElementById('noVideoOverlay');
+      const videoStatusWrapper = document.getElementById('videoStatusWrapper');
+      const videoStatusText = document.getElementById('videoStatus');
+      const playOverlay = document.getElementById('playOverlay');
+      const lineContainer = document.getElementById('lineContainer');
+      const playhead = document.getElementById('playhead');
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      const globalLoadingOverlay = document.getElementById('globalLoadingOverlay');
+      const suggestionForm = document.getElementById('suggestionForm');
+      const suggestionInput = document.getElementById('suggestionInput');
+      const errorPopup = document.getElementById('errorPopup');
+      const closeErrorPopup = document.getElementById('closeErrorPopup');
+      let containerWidth = 0;
+      let segmentWidth = 0;
+      let animFrame = null;
+      let predictionsReady = false;
+      fileInput?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        globalLoadingOverlay.style.display = 'flex';
+      });
+      videoPreview?.addEventListener('play', () => {
+        if (!predictionsReady) videoPreview.pause();
+      });
+      const loadSuggestion = (filename) => {
+        globalLoadingOverlay.style.display = 'flex';
+        suggestionInput.value = filename;
+        suggestionForm.submit();
+      };
+      playOverlay?.addEventListener('click', () => {
+        if (predictionsReady) {
+          videoPreview.play().catch(err => console.warn("Falha no play:", err));
+        }
+      });
+      const buildViolenceLine = () => {
+        if (videoPreview.hidden) return;
+        videoPreview.removeEventListener('loadedmetadata', buildViolenceLine);
+        const blockCount = violenceMapFromModel.length || 1;
+        containerWidth = lineContainer.offsetWidth;
+        segmentWidth = containerWidth / blockCount;
+        lineContainer.innerHTML = "";
+        for (let i = 0; i < blockCount; i++) {
+          if (violenceMapFromModel[i]) {
+            const div = document.createElement('div');
+            div.className = 'absolute top-0 bottom-0 bg-red-300';
+            div.style.left = `${i * segmentWidth}px`;
+            div.style.width = `${segmentWidth}px`;
+            lineContainer.appendChild(div);
+          }
+        }
+        predictionsReady = true;
+        globalLoadingOverlay.style.display = 'none';
+        loadingOverlay.style.display = 'none';
+      };
+      const animatePlayhead = () => {
+        if (videoPreview.paused || videoPreview.ended) return;
+        const currentTime = videoPreview.currentTime;
+        const blockCount = violenceMapFromModel.length || 1;
+        const blockDuration = videoPreview.duration / blockCount;
+        const blockIndex = Math.floor(currentTime / blockDuration);
+        if (violenceMapFromModel[blockIndex]) {
+          videoStatusText.textContent = 'Violência';
+          videoStatusText.className = 'text-lg font-bold text-red-300';
+        } else {
+          videoStatusText.textContent = 'Sem Violência';
+          videoStatusText.className = 'text-lg font-bold text-gray-200';
+        }
+        const ratio = currentTime / videoPreview.duration;
+        const ballDiameter = playhead.offsetWidth;
+        let posX = ratio * (containerWidth - ballDiameter);
+        posX = Math.max(0, Math.min(posX, containerWidth - ballDiameter));
+        playhead.style.left = `${posX}px`;
+        animFrame = requestAnimationFrame(animatePlayhead);
+      };
+      const onVideoPlay = () => {
+        if (!predictionsReady) return;
+        hidePlayOverlay();
+        cancelAnimationFrame(animFrame);
+        animatePlayhead();
+      };
+      const onVideoPause = () => {
+        showPlayOverlay();
+        cancelAnimationFrame(animFrame);
+      };
+      const onVideoEnded = () => {
+        showPlayOverlay();
+        cancelAnimationFrame(animFrame);
+      };
+      const pauseOnClick = () => {
+        if (!videoPreview.paused) videoPreview.pause();
+      };
+      const showPlayOverlay = () => playOverlay.classList.remove('hidden');
+      const hidePlayOverlay = () => playOverlay.classList.add('hidden');
+      if (!videoPreview.classList.contains('hidden')) {
+        videoPreview.addEventListener('loadedmetadata', buildViolenceLine);
+        videoPreview.addEventListener('play', onVideoPlay);
+        videoPreview.addEventListener('playing', hidePlayOverlay);
+        videoPreview.addEventListener('pause', onVideoPause);
+        videoPreview.addEventListener('ended', onVideoEnded);
+        videoPreview.addEventListener('click', pauseOnClick);
+      }
+      if (errorPopup) {
+        const fadeOutErrorPopup = () => {
+          errorPopup.style.transform = "translateX(100%)";
+          errorPopup.style.opacity = "0";
+        };
+        closeErrorPopup?.addEventListener('click', fadeOutErrorPopup);
+        setTimeout(fadeOutErrorPopup, 5000);
+      }
+      window.loadSuggestion = loadSuggestion;
+    });
+  </script>
+</body>
+</html>
